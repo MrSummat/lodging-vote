@@ -5,9 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bday Weekend Villa Vote 🎂</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- Supabase JS Client for Real-time Group Sync -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen pb-16 font-sans">
 
@@ -22,7 +19,7 @@
         </div>
       </div>
       <div id="voter-badge" class="bg-indigo-900/50 text-indigo-300 border border-indigo-700/50 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5">
-        <i data-lucide="users" class="w-3.5 h-3.5"></i>
+        <span>👥</span>
         <span id="active-group-size">16 Guests</span>
       </div>
     </div>
@@ -34,10 +31,213 @@
     <section id="host-admin-panel" class="hidden bg-amber-950/40 border border-amber-500/40 rounded-2xl p-6 space-y-4">
       <div class="flex items-center justify-between border-b border-amber-500/20 pb-3">
         <div class="flex items-center gap-2 text-amber-400 font-semibold text-lg">
-          <i data-lucide="shield-alert" class="w-5 h-5"></i>
-          Host Admin Controls (Only You Can See This)
+          🛡️ Host Admin Controls (Only You Can See This)
         </div>
         <span class="text-xs bg-amber-500/20 text-amber-300 px-2.5 py-1 rounded-full border border-amber-500/30">Admin Mode</span>
       </div>
 
-      <div class="grid
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label class="block text-sm font-medium text-slate-300 mb-2">
+            Host Subsidy: <span id="subsidy-label" class="text-amber-400 font-bold">50%</span>
+          </label>
+          <input id="subsidy-slider" type="range" min="0" max="100" value="50" step="5" class="w-full accent-amber-500 bg-slate-800 rounded-lg h-2 cursor-pointer">
+          <p class="text-xs text-slate-400 mt-1">Adjust how much of the total price you cover as the host.</p>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-slate-300 mb-2">Total Expected Guests</label>
+          <input id="guest-count-input" type="number" min="5" max="30" value="16" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm w-full text-white">
+        </div>
+      </div>
+    </section>
+
+    <!-- App Intro -->
+    <div class="text-center max-w-2xl mx-auto space-y-2">
+      <h2 class="text-3xl font-extrabold text-white">Choose Our Accommodation</h2>
+      <p class="text-slate-400 text-sm">
+        Cast your vote for your favorite house for the weekend! Prices shown are your discounted total share for the entire stay.
+      </p>
+    </div>
+
+    <!-- Villa Grid -->
+    <div id="villas-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- Injected dynamically via JS -->
+    </div>
+
+  </main>
+
+  <script>
+    // INITIAL DATA SET (Prices in EUR, Subsidies auto-computed)
+    const state = {
+      subsidyPercent: 50,
+      totalGuests: 16,
+      userVotedId: localStorage.getItem('user_voted_villa_id') || null,
+      villas: [
+        {
+          id: "villa-1",
+          name: "Lloret Coastal Haven",
+          location: "Lloret de Mar (Coast)",
+          airportDist: "55 mins from BCN",
+          totalPriceWeekend: 1400,
+          specs: { bedrooms: 7, beds: 16, baths: 5 },
+          tags: ["Heated Pool", "Sea View", "Private Cinema", "Walk to Beach"],
+          image: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80",
+          votes: 0
+        },
+        {
+          id: "villa-2",
+          name: "Collsuspina Spa Estate",
+          location: "Collsuspina (Mountains)",
+          airportDist: "65 mins from BCN",
+          totalPriceWeekend: 1600,
+          specs: { bedrooms: 8, beds: 18, baths: 7 },
+          tags: ["Indoor Climatized Pool", "Sauna & Spa", "Montserrat Views", "Fireplace"],
+          image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80",
+          votes: 0
+        },
+        {
+          id: "villa-3",
+          name: "Masía Lleida Retreat",
+          location: "Vilanova de l'Aguda",
+          airportDist: "1h 45m from BCN",
+          totalPriceWeekend: 1200,
+          specs: { bedrooms: 6, beds: 15, baths: 4 },
+          tags: ["Climatized Pool", "Ping Pong", "Game Room", "100m² Lounge"],
+          image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80",
+          votes: 0
+        }
+      ]
+    };
+
+    // CHECK IF ADMIN VIA URL PARAM: ?admin=bday2026
+    const urlParams = new URLSearchParams(window.location.search);
+    const isAdmin = urlParams.get('admin') === 'bday2026';
+
+    if (isAdmin) {
+      document.getElementById('host-admin-panel').classList.remove('hidden');
+    }
+
+    // EVENT LISTENERS FOR ADMIN
+    document.getElementById('subsidy-slider').addEventListener('input', (e) => {
+      state.subsidyPercent = parseInt(e.target.value);
+      document.getElementById('subsidy-label').textContent = `${state.subsidyPercent}%`;
+      renderVillas();
+    });
+
+    document.getElementById('guest-count-input').addEventListener('change', (e) => {
+      state.totalGuests = parseInt(e.target.value) || 16;
+      document.getElementById('active-group-size').textContent = `${state.totalGuests} Guests`;
+      renderVillas();
+    });
+
+    // RENDER FUNCTION
+    function renderVillas() {
+      const container = document.getElementById('villas-container');
+      container.innerHTML = '';
+
+      const totalVotesAll = state.villas.reduce((acc, v) => acc + v.votes, 0);
+
+      state.villas.forEach(villa => {
+        // Calculate Subsidized Per-Person Cost
+        const rawPerPerson = villa.totalPriceWeekend / state.totalGuests;
+        const subsidizedPerPerson = Math.round(rawPerPerson * (1 - state.subsidyPercent / 100));
+
+        const votePercentage = totalVotesAll > 0 ? Math.round((villa.votes / totalVotesAll) * 100) : 0;
+        const hasVotedThis = state.userVotedId === villa.id;
+
+        const card = document.createElement('div');
+        card.className = "bg-slate-800 border border-slate-700/60 rounded-2xl overflow-hidden flex flex-col justify-between shadow-xl";
+
+        card.innerHTML = `
+          <div>
+            <div class="relative h-48 w-full overflow-hidden">
+              <img src="${villa.image}" alt="${villa.name}" class="w-full h-full object-cover">
+              <div class="absolute top-3 right-3 bg-slate-900/80 backdrop-blur text-slate-200 text-xs px-2.5 py-1 rounded-full font-medium flex items-center gap-1 border border-slate-700">
+                ✈️ ${villa.airportDist}
+              </div>
+            </div>
+
+            <div class="p-5 space-y-4">
+              <div>
+                <h3 class="font-bold text-lg text-white">${villa.name}</h3>
+                <p class="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
+                  📍 ${villa.location}
+                </p>
+              </div>
+
+              <!-- Price Box -->
+              <div class="bg-slate-900/80 rounded-xl p-3 border border-slate-700/50 flex items-baseline justify-between">
+                <div>
+                  <span class="text-2xl font-black text-amber-400">€${subsidizedPerPerson}</span>
+                  <span class="text-xs text-slate-400"> / person total</span>
+                </div>
+                <span class="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Weekend Stay</span>
+              </div>
+
+              <!-- Specs -->
+              <div class="grid grid-cols-3 gap-2 text-center bg-slate-900/40 rounded-lg p-2 border border-slate-700/30 text-xs">
+                <div><span class="font-bold text-slate-200">${villa.specs.bedrooms}</span> <span class="text-slate-400">Beds</span></div>
+                <div><span class="font-bold text-slate-200">${villa.specs.beds}</span> <span class="text-slate-400">Cap</span></div>
+                <div><span class="font-bold text-slate-200">${villa.specs.baths}</span> <span class="text-slate-400">Baths</span></div>
+              </div>
+
+              <!-- Tags -->
+              <div class="flex flex-wrap gap-1.5 pt-1">
+                ${villa.tags.map(t => `<span class="bg-indigo-950/60 text-indigo-300 border border-indigo-800/40 text-[11px] px-2 py-0.5 rounded-md font-medium">${t}</span>`).join('')}
+              </div>
+            </div>
+          </div>
+
+          <!-- Vote Area -->
+          <div class="p-5 pt-0 space-y-2">
+            <button onclick="castVote('${villa.id}')" 
+              class="w-full py-2.5 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${
+                hasVotedThis 
+                  ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/40' 
+                  : 'bg-indigo-600 hover:bg-indigo-500 text-white'
+              }">
+              ${hasVotedThis ? '✅ Your Vote' : '👍 Vote for this House'}
+            </button>
+
+            <div class="space-y-1">
+              <div class="flex justify-between text-xs text-slate-400 font-medium">
+                <span>${villa.votes} votes</span>
+                <span>${votePercentage}%</span>
+              </div>
+              <div class="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden">
+                <div class="bg-indigo-500 h-full transition-all duration-500" style="width: ${votePercentage}%"></div>
+              </div>
+            </div>
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    function castVote(villaId) {
+      if (state.userVotedId === villaId) return;
+
+      // Decrement old vote if changing vote
+      if (state.userVotedId) {
+        const prev = state.villas.find(v => v.id === state.userVotedId);
+        if (prev && prev.votes > 0) prev.votes--;
+      }
+
+      // Increment new vote
+      const target = state.villas.find(v => v.id === villaId);
+      if (target) {
+        target.votes++;
+        state.userVotedId = villaId;
+        localStorage.setItem('user_voted_villa_id', villaId);
+      }
+
+      renderVillas();
+    }
+
+    // INITIAL RENDER
+    renderVillas();
+  </script>
+</body>
+</html>
