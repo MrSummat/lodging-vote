@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bday Weekend Villa Vote 🎂</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Supabase JS Client for Real-time Group Sync -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen pb-16 font-sans">
+
+  <!-- Header -->
+  <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur sticky top-0 z-40">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <span class="text-3xl">🎉</span>
+        <div>
+          <h1 class="font-bold text-xl text-white">Birthday Weekend BCN</h1>
+          <p class="text-xs text-slate-400">Early December Get-Together</p>
+        </div>
+      </div>
+      <div id="voter-badge" class="bg-indigo-900/50 text-indigo-300 border border-indigo-700/50 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5">
+        <i data-lucide="users" class="w-3.5 h-3.5"></i>
+        <span id="active-group-size">16 Guests</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 pt-8 space-y-8">
+
+    <!-- HOST ADMIN PANEL (Hidden from public by default) -->
+    <section id="host-admin-panel" class="hidden bg-amber-950/40 border border-amber-500/40 rounded-2xl p-6 space-y-4">
+      <div class="flex items-center justify-between border-b border-amber-500/20 pb-3">
+        <div class="flex items-center gap-2 text-amber-400 font-semibold text-lg">
+          <i data-lucide="shield-alert" class="w-5 h-5"></i>
+          Host Admin Controls (Only You Can See This)
+        </div>
+        <span class="text-xs bg-amber-500/20 text-amber-300 px-2.5 py-1 rounded-full border border-amber-500/30">Admin Mode</span>
+      </div>
+
+      <div class="grid
