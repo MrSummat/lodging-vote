@@ -1,243 +1,707 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bday Weekend Villa Vote 🎂</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>House Vote</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #fbf9f5;
+    --surface: #ffffff;
+    --surface-2: #f5f0e6;
+    --line: #e8decb;
+    --text: #1f2933;
+    --muted: #64707d;
+    --accent: #c84421;
+    --accent-soft: #fff1ea;
+    --accent-2: #4e5b31;
+    --good: #2f7a4a;
+    --shadow: 0 1px 2px rgba(31, 41, 51, .06), 0 8px 24px rgba(31, 41, 51, .06);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #17140f;
+      --surface: #221e18;
+      --surface-2: #2c2720;
+      --line: #3a342b;
+      --text: #f1ece3;
+      --muted: #a89f92;
+      --accent: #ec7a52;
+      --accent-soft: #3a2419;
+      --accent-2: #a9b98a;
+      --good: #5cc283;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .3);
+      color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.5 "Plus Jakarta Sans", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  [hidden] { display: none !important; }
+  a { color: var(--accent); }
+  h1, h2, h3 { font-family: "Playfair Display", Georgia, serif; line-height: 1.2; margin: 0; }
+
+  .hero {
+    background: linear-gradient(120deg, #9a3015, #c84421 45%, #3c4724);
+    color: #fff;
+    padding: 48px 16px 40px;
+    text-align: center;
+  }
+  .hero h1 { font-size: clamp(28px, 6vw, 44px); }
+  .hero p { margin: 10px auto 0; max-width: 560px; opacity: .9; }
+
+  main { max-width: 1100px; margin: 0 auto; padding: 24px 16px 64px; }
+  .stack > * + * { margin-top: 20px; }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 18px 20px;
+    box-shadow: var(--shadow);
+  }
+  .panel h2 { font-size: 20px; margin-bottom: 10px; }
+  .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  .spread { justify-content: space-between; }
+  .muted { color: var(--muted); font-size: 13px; }
+
+  label.field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 600; color: var(--muted); }
+  input, select, textarea {
+    font: inherit;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 9px 11px;
+    width: 100%;
+  }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  textarea { resize: vertical; min-height: 64px; }
+
+  .btn {
+    font: inherit;
+    font-weight: 700;
+    font-size: 14px;
+    border: 0;
+    border-radius: 12px;
+    padding: 11px 16px;
+    cursor: pointer;
+    background: var(--text);
+    color: var(--bg);
+    transition: transform .1s, opacity .15s, background .15s;
+  }
+  .btn:hover { opacity: .9; }
+  .btn:active { transform: scale(.98); }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .btn.accent { background: var(--accent); color: #fff; }
+  .btn.good { background: var(--good); color: #fff; }
+  .btn.ghost { background: transparent; color: var(--text); border: 1px solid var(--line); }
+  .btn.danger { background: transparent; color: #c0392b; border: 1px solid currentColor; }
+  .btn.small { padding: 6px 10px; font-size: 12px; border-radius: 9px; }
+  .btn.block { width: 100%; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 600;
+    padding: 4px 10px; border-radius: 999px;
+    background: var(--surface-2); border: 1px solid var(--line);
+  }
+  .chip.done { background: color-mix(in srgb, var(--good) 14%, transparent); border-color: color-mix(in srgb, var(--good) 40%, transparent); }
+  .chip button { border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 14px; padding: 0; line-height: 1; }
+
+  .progress { height: 8px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+  .progress > div { height: 100%; background: var(--accent); border-radius: 999px; transition: width .4s; }
+
+  .grid { display: grid; gap: 20px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    display: flex; flex-direction: column;
+  }
+  .card.mine { outline: 3px solid var(--accent); outline-offset: -1px; }
+  .gallery-wrap { position: relative; background: var(--surface-2); }
+  .gallery {
+    display: flex; overflow-x: auto; scroll-snap-type: x mandatory;
+    aspect-ratio: 16 / 10; scrollbar-width: none;
+  }
+  .gallery::-webkit-scrollbar { display: none; }
+  .gallery img { flex: 0 0 100%; width: 100%; height: 100%; object-fit: cover; scroll-snap-align: start; }
+  .gallery .empty { flex: 0 0 100%; display: grid; place-items: center; color: var(--muted); font-size: 40px; }
+  .gal-btn {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    width: 32px; height: 32px; border-radius: 50%; border: 0;
+    background: rgba(255, 255, 255, .85); color: #1f2933; cursor: pointer; font-size: 18px; line-height: 1;
+  }
+  .gal-btn.prev { left: 8px; }
+  .gal-btn.next { right: 8px; }
+  .badge {
+    position: absolute; top: 10px; left: 10px;
+    background: var(--accent); color: #fff;
+    font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase;
+    padding: 4px 10px; border-radius: 999px;
+  }
+  .photo-count {
+    position: absolute; bottom: 10px; right: 10px;
+    background: rgba(0, 0, 0, .55); color: #fff; font-size: 11px; font-weight: 600;
+    padding: 3px 8px; border-radius: 999px;
+  }
+  .card-body { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 12px; flex: 1; }
+  .card-body h3 { font-size: 21px; }
+  .card-body .desc { margin: 0; font-size: 14px; }
+  .price {
+    display: flex; justify-content: space-between; align-items: center; gap: 8px;
+    background: var(--accent-soft); border-radius: 12px; padding: 10px 14px;
+  }
+  .price .amount { font-size: 28px; font-weight: 800; color: var(--accent); }
+  .price small { display: block; font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--accent); }
+  .card-foot { margin-top: auto; display: flex; flex-direction: column; gap: 10px; }
+
+  .toast {
+    position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+    transform: translate(-50%, 20px); opacity: 0; pointer-events: none;
+    background: #1f2933; color: #fff; font-size: 13px; font-weight: 600;
+    padding: 10px 16px; border-radius: 12px; transition: all .25s; z-index: 10;
+  }
+  .toast.show { transform: translate(-50%, 0); opacity: 1; }
+
+  /* Admin */
+  .admin-bar { background: var(--text); color: var(--bg); padding: 10px 16px; }
+  .admin-bar .row { max-width: 1100px; margin: 0 auto; }
+  .admin-bar a { color: inherit; }
+  .form-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr)); }
+  .form-grid .wide { grid-column: 1 / -1; }
+  .house-form { border: 1px solid var(--line); border-radius: 14px; padding: 16px; background: var(--surface); }
+  .house-form + .house-form { margin-top: 14px; }
+  .house-form.dirty { border-color: var(--accent); }
+  .calc { background: var(--surface-2); border-radius: 10px; padding: 10px 12px; font-size: 13px; }
+  .calc b { color: var(--accent); }
+  .seg { display: inline-flex; flex-shrink: 0; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .seg label { min-width: 44px; padding: 9px 14px; text-align: center; cursor: pointer; font-size: 15px; font-weight: 700; color: var(--text); }
+  .seg label + label { border-left: 1px solid var(--line); }
+  .seg input { display: none; }
+  .seg label:has(input:checked) { background: var(--text); color: var(--bg); }
+  table.results { width: 100%; border-collapse: collapse; font-size: 14px; }
+  table.results td, table.results th { padding: 8px 6px; border-bottom: 1px solid var(--line); text-align: left; }
+  table.results td.num, table.results th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .center { text-align: center; }
+</style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen pb-16 font-sans">
+<body>
 
-  <!-- Header -->
-  <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur sticky top-0 z-40">
-    <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <span class="text-3xl">🎉</span>
-        <div>
-          <h1 class="font-bold text-xl text-white">Birthday Weekend BCN</h1>
-          <p class="text-xs text-slate-400">Early December Get-Together</p>
-        </div>
-      </div>
-      <div id="voter-badge" class="bg-indigo-900/50 text-indigo-300 border border-indigo-700/50 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5">
-        <span>👥</span>
-        <span id="active-group-size">16 Guests</span>
-      </div>
-    </div>
-  </header>
+<div id="app"><main><p class="muted center">Loading…</p></main></div>
+<div id="toast" class="toast" role="status"></div>
 
-  <main class="max-w-6xl mx-auto px-4 pt-8 space-y-8">
+<script>
+// ---- Configuration: paste your Supabase project values here (see README) ----
+const SUPABASE_URL = 'https://dfyfugcvrscvxuiwsidr.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_AHHmrgm9RKFblV5E0EtPmA_w7Q6gycl';
+// ------------------------------------------------------------------------------
 
-    <!-- HOST ADMIN PANEL (Hidden from public by default) -->
-    <section id="host-admin-panel" class="hidden bg-amber-950/40 border border-amber-500/40 rounded-2xl p-6 space-y-4">
-      <div class="flex items-center justify-between border-b border-amber-500/20 pb-3">
-        <div class="flex items-center gap-2 text-amber-400 font-semibold text-lg">
-          🛡️ Host Admin Controls (Only You Can See This)
-        </div>
-        <span class="text-xs bg-amber-500/20 text-amber-300 px-2.5 py-1 rounded-full border border-amber-500/30">Admin Mode</span>
-      </div>
+const app = document.getElementById('app');
+const isAdmin = new URLSearchParams(location.search).has('admin');
+const configured = !SUPABASE_URL.includes('YOUR-PROJECT') && !SUPABASE_KEY.startsWith('YOUR-');
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label class="block text-sm font-medium text-slate-300 mb-2">
-            Host Subsidy: <span id="subsidy-label" class="text-amber-400 font-bold">50%</span>
-          </label>
-          <input id="subsidy-slider" type="range" min="0" max="100" value="50" step="5" class="w-full accent-amber-500 bg-slate-800 rounded-lg h-2 cursor-pointer">
-          <p class="text-xs text-slate-400 mt-1">Adjust how much of the total price you cover as the host.</p>
-        </div>
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const money = n => n == null ? '–' : '€' + Number(n).toLocaleString('en-IE', {
+  minimumFractionDigits: Number(n) % 1 ? 2 : 0,
+  maximumFractionDigits: 2,
+});
+const safeUrl = u => /^https?:\/\//i.test(u || '') ? u : '';
+// Images may also be relative paths to photos stored in this repo (e.g. photos/villa/1.jpg).
+const safeImg = u => safeUrl(u) || (/^[\w\-./]+$/.test(u || '') && !u.includes('..') ? u : '');
 
-        <div>
-          <label class="block text-sm font-medium text-slate-300 mb-2">Total Expected Guests</label>
-          <input id="guest-count-input" type="number" min="5" max="30" value="16" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm w-full text-white">
-        </div>
-      </div>
-    </section>
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {} },
+};
 
-    <!-- App Intro -->
-    <div class="text-center max-w-2xl mx-auto space-y-2">
-      <h2 class="text-3xl font-extrabold text-white">Choose Our Accommodation</h2>
-      <p class="text-slate-400 text-sm">
-        Cast your vote for your favorite house for the weekend! Prices shown are your discounted total share for the entire stay.
-      </p>
-    </div>
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
+}
 
-    <!-- Villa Grid -->
-    <div id="villas-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <!-- Injected dynamically via JS -->
-    </div>
+async function rpc(fn, args = {}) {
+  const headers = { 'Content-Type': 'application/json', apikey: SUPABASE_KEY };
+  // Legacy anon keys are JWTs and also go in Authorization; new publishable keys don't.
+  if (SUPABASE_KEY.startsWith('eyJ')) headers.Authorization = 'Bearer ' + SUPABASE_KEY;
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, { method: 'POST', headers, body: JSON.stringify(args) });
+  const text = await res.text();
+  const data = text ? JSON.parse(text) : null;
+  if (!res.ok) throw new Error(data?.message || res.statusText);
+  return data;
+}
 
-  </main>
+function deviceToken() {
+  let t = store.get('lv_token');
+  if (!t) {
+    t = crypto.randomUUID ? crypto.randomUUID()
+      : '10000000-1000-4000-8000-100000000000'.replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
+    store.set('lv_token', t);
+  }
+  return t;
+}
 
-  <script>
-    // INITIAL DATA SET (Prices in EUR, Subsidies auto-computed)
-    const state = {
-      subsidyPercent: 50,
-      totalGuests: 16,
-      userVotedId: localStorage.getItem('user_voted_villa_id') || null,
-      villas: [
-        {
-          id: "villa-1",
-          name: "Lloret Coastal Haven",
-          location: "Lloret de Mar (Coast)",
-          airportDist: "55 mins from BCN",
-          totalPriceWeekend: 1400,
-          specs: { bedrooms: 7, beds: 16, baths: 5 },
-          tags: ["Heated Pool", "Sea View", "Private Cinema", "Walk to Beach"],
-          image: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80",
-          votes: 0
-        },
-        {
-          id: "villa-2",
-          name: "Collsuspina Spa Estate",
-          location: "Collsuspina (Mountains)",
-          airportDist: "65 mins from BCN",
-          totalPriceWeekend: 1600,
-          specs: { bedrooms: 8, beds: 18, baths: 7 },
-          tags: ["Indoor Climatized Pool", "Sauna & Spa", "Montserrat Views", "Fireplace"],
-          image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80",
-          votes: 0
-        },
-        {
-          id: "villa-3",
-          name: "Masía Lleida Retreat",
-          location: "Vilanova de l'Aguda",
-          airportDist: "1h 45m from BCN",
-          totalPriceWeekend: 1200,
-          specs: { bedrooms: 6, beds: 15, baths: 4 },
-          tags: ["Climatized Pool", "Ping Pong", "Game Room", "100m² Lounge"],
-          image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80",
-          votes: 0
-        }
-      ]
-    };
+// Mirrors public.host_share() in schema.sql, for the admin live preview.
+function hostShare(total, mode, value) {
+  total = Number(total) || 0;
+  value = Number(value) || 0;
+  return Math.min(total, mode === 'pct' ? total * Math.min(value, 100) / 100 : value);
+}
 
-    // CHECK IF ADMIN VIA URL PARAM: ?admin=bday2026
-    const urlParams = new URLSearchParams(window.location.search);
-    const isAdmin = urlParams.get('admin') === 'bday2026';
+function galleryHtml(images, name) {
+  const imgs = images.map(safeImg).filter(Boolean);
+  if (!imgs.length) return `<div class="gallery"><div class="empty">🏡</div></div>`;
+  return `
+    <div class="gallery">${imgs.map(u => `<img src="${esc(u)}" alt="${esc(name)}" loading="lazy">`).join('')}</div>
+    ${imgs.length > 1 ? `
+      <button class="gal-btn prev" data-gal="-1" aria-label="Previous photo">‹</button>
+      <button class="gal-btn next" data-gal="1" aria-label="Next photo">›</button>
+      <span class="photo-count">${imgs.length} photos</span>` : ''}`;
+}
 
-    if (isAdmin) {
-      document.getElementById('host-admin-panel').classList.remove('hidden');
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-gal]');
+  if (!b) return;
+  const g = b.parentElement.querySelector('.gallery');
+  g.scrollBy({ left: g.clientWidth * Number(b.dataset.gal), behavior: 'smooth' });
+});
+
+// =============================== Guest view ===============================
+
+const guest = {
+  state: null,
+  lastJson: '',
+  id: store.get('lv_guest'),
+  myVote: null,
+  busy: false,
+
+  async load(force = false) {
+    try {
+      const state = await rpc('get_state');
+      if (guest.id && !state.guests.some(g => g.id === guest.id)) {
+        guest.id = null;
+        store.set('lv_guest', null);
+      }
+      guest.myVote = guest.id ? await rpc('my_vote', { p_guest: guest.id, p_token: deviceToken() }) : null;
+      const json = JSON.stringify([state, guest.id, guest.myVote]);
+      if (!force && json === guest.lastJson) return;
+      guest.lastJson = json;
+      guest.state = state;
+      guest.render();
+    } catch (err) {
+      if (!guest.state) app.innerHTML = `<main><div class="panel">Couldn't load: ${esc(err.message)}</div></main>`;
     }
+  },
 
-    // EVENT LISTENERS FOR ADMIN
-    document.getElementById('subsidy-slider').addEventListener('input', (e) => {
-      state.subsidyPercent = parseInt(e.target.value);
-      document.getElementById('subsidy-label').textContent = `${state.subsidyPercent}%`;
-      renderVillas();
-    });
+  render() {
+    const s = guest.state;
+    document.title = s.title;
+    const me = s.guests.find(g => g.id === guest.id);
+    const votedCount = s.guests.filter(g => g.voted).length;
+    const totalVotes = s.houses.reduce((a, h) => a + h.votes, 0);
+    const maxVotes = Math.max(0, ...s.houses.map(h => h.votes));
 
-    document.getElementById('guest-count-input').addEventListener('change', (e) => {
-      state.totalGuests = parseInt(e.target.value) || 16;
-      document.getElementById('active-group-size').textContent = `${state.totalGuests} Guests`;
-      renderVillas();
-    });
+    let status = '';
+    if (!s.voting_open) status = 'Voting is closed.';
+    else if (!me) status = 'Pick your name to vote.';
+    else if (guest.myVote) status = 'Your vote is in. You can change it any time while voting is open.';
+    else if (me.voted) status = "You've already voted from another device. Vote here to change it.";
+    else status = "You haven't voted yet.";
 
-    // RENDER FUNCTION
-    function renderVillas() {
-      const container = document.getElementById('villas-container');
-      container.innerHTML = '';
+    app.innerHTML = `
+      <header class="hero">
+        <h1>${esc(s.title)}</h1>
+        ${s.subtitle ? `<p>${esc(s.subtitle)}</p>` : ''}
+      </header>
+      <main class="stack">
+        <section class="panel">
+          <div class="row spread">
+            <label class="field" style="flex:1 1 220px">Who are you?
+              <select id="who">
+                <option value="">Select your name…</option>
+                ${s.guests.map(g => `<option value="${g.id}" ${g.id === guest.id ? 'selected' : ''}>${esc(g.name)}</option>`).join('')}
+              </select>
+            </label>
+            <p class="muted" style="flex:2 1 260px;margin:18px 0 0">${esc(status)} Votes are anonymous: everyone sees the totals, not who voted for what.</p>
+          </div>
+        </section>
 
-      const totalVotesAll = state.villas.reduce((acc, v) => acc + v.votes, 0);
+        <section class="panel">
+          <div class="row spread" style="margin-bottom:10px">
+            <strong>${votedCount} of ${s.guest_count} have voted</strong>
+            <span class="muted">Price per person = (house total − host contribution) ÷ ${s.guest_count} guests</span>
+          </div>
+          <div class="progress" style="margin-bottom:12px"><div style="width:${s.guest_count ? votedCount / s.guest_count * 100 : 0}%"></div></div>
+          <div class="chips">${s.guests.map(g => `<span class="chip ${g.voted ? 'done' : ''}">${g.voted ? '✓ ' : ''}${esc(g.name)}</span>`).join('')}</div>
+        </section>
 
-      state.villas.forEach(villa => {
-        // Calculate Subsidized Per-Person Cost
-        const rawPerPerson = villa.totalPriceWeekend / state.totalGuests;
-        const subsidizedPerPerson = Math.round(rawPerPerson * (1 - state.subsidyPercent / 100));
-
-        const votePercentage = totalVotesAll > 0 ? Math.round((villa.votes / totalVotesAll) * 100) : 0;
-        const hasVotedThis = state.userVotedId === villa.id;
-
-        const card = document.createElement('div');
-        card.className = "bg-slate-800 border border-slate-700/60 rounded-2xl overflow-hidden flex flex-col justify-between shadow-xl";
-
-        card.innerHTML = `
-          <div>
-            <div class="relative h-48 w-full overflow-hidden">
-              <img src="${villa.image}" alt="${villa.name}" class="w-full h-full object-cover">
-              <div class="absolute top-3 right-3 bg-slate-900/80 backdrop-blur text-slate-200 text-xs px-2.5 py-1 rounded-full font-medium flex items-center gap-1 border border-slate-700">
-                ✈️ ${villa.airportDist}
+        ${s.houses.length ? `<section class="grid">${s.houses.map(h => {
+          const pct = totalVotes ? Math.round(h.votes / totalVotes * 100) : 0;
+          const mine = guest.myVote === h.id;
+          const leading = maxVotes > 0 && h.votes === maxVotes;
+          return `
+            <article class="card ${mine ? 'mine' : ''}">
+              <div class="gallery-wrap">
+                ${galleryHtml(h.images, h.name)}
+                ${leading ? `<span class="badge">${s.houses.filter(x => x.votes === maxVotes).length > 1 ? 'Tied lead' : 'Group favourite'}</span>` : ''}
               </div>
-            </div>
-
-            <div class="p-5 space-y-4">
-              <div>
-                <h3 class="font-bold text-lg text-white">${villa.name}</h3>
-                <p class="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
-                  📍 ${villa.location}
-                </p>
-              </div>
-
-              <!-- Price Box -->
-              <div class="bg-slate-900/80 rounded-xl p-3 border border-slate-700/50 flex items-baseline justify-between">
+              <div class="card-body">
                 <div>
-                  <span class="text-2xl font-black text-amber-400">€${subsidizedPerPerson}</span>
-                  <span class="text-xs text-slate-400"> / person total</span>
+                  <h3>${esc(h.name)}</h3>
+                  <div class="muted">${[h.location && '📍 ' + esc(h.location), h.capacity && `Sleeps ${h.capacity}`].filter(Boolean).join(' · ')}</div>
                 </div>
-                <span class="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Weekend Stay</span>
+                ${h.description ? `<p class="desc">${esc(h.description)}</p>` : ''}
+                ${h.highlights.length ? `<div class="chips">${h.highlights.map(t => `<span class="chip">${esc(t)}</span>`).join('')}</div>` : ''}
+                <div class="card-foot">
+                  <div class="price">
+                    <div><small>Your share</small><span class="muted">${esc(s.price_note)}</span></div>
+                    <span class="amount">${money(h.price_pp)}</span>
+                  </div>
+                  <div>
+                    <div class="row spread muted" style="margin-bottom:4px"><span>Votes</span><span>${h.votes} (${pct}%)</span></div>
+                    <div class="progress"><div style="width:${pct}%"></div></div>
+                  </div>
+                  <button class="btn block ${mine ? 'good' : 'accent'}" data-vote="${h.id}" ${s.voting_open ? '' : 'disabled'}>
+                    ${mine ? '✓ Your vote (tap to remove)' : 'Vote for this house'}
+                  </button>
+                </div>
               </div>
+            </article>`;
+        }).join('')}</section>` : `<div class="panel center muted">No houses yet. Check back soon!</div>`}
+      </main>`;
 
-              <!-- Specs -->
-              <div class="grid grid-cols-3 gap-2 text-center bg-slate-900/40 rounded-lg p-2 border border-slate-700/30 text-xs">
-                <div><span class="font-bold text-slate-200">${villa.specs.bedrooms}</span> <span class="text-slate-400">Beds</span></div>
-                <div><span class="font-bold text-slate-200">${villa.specs.beds}</span> <span class="text-slate-400">Cap</span></div>
-                <div><span class="font-bold text-slate-200">${villa.specs.baths}</span> <span class="text-slate-400">Baths</span></div>
-              </div>
+    document.getElementById('who').addEventListener('change', e => {
+      guest.id = e.target.value || null;
+      store.set('lv_guest', guest.id);
+      guest.load(true);
+    });
+    app.querySelectorAll('[data-vote]').forEach(b => b.addEventListener('click', () => guest.vote(b.dataset.vote)));
+  },
 
-              <!-- Tags -->
-              <div class="flex flex-wrap gap-1.5 pt-1">
-                ${villa.tags.map(t => `<span class="bg-indigo-950/60 text-indigo-300 border border-indigo-800/40 text-[11px] px-2 py-0.5 rounded-md font-medium">${t}</span>`).join('')}
-              </div>
+  async vote(houseId) {
+    if (!guest.id) {
+      document.getElementById('who').focus();
+      toast('Pick your name first');
+      return;
+    }
+    if (guest.busy) return;
+    guest.busy = true;
+    const removing = guest.myVote === houseId;
+    try {
+      await rpc('cast_vote', { p_guest: guest.id, p_house: removing ? null : houseId, p_token: deviceToken() });
+      toast(removing ? 'Vote removed' : 'Vote saved!');
+      await guest.load(true);
+    } catch (err) {
+      toast(err.message);
+    } finally {
+      guest.busy = false;
+    }
+  },
+
+  start() {
+    guest.load(true);
+    setInterval(() => { if (!document.hidden) guest.load(); }, 15000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) guest.load(); });
+  },
+};
+
+// =============================== Admin view ===============================
+
+const admin = {
+  key: store.get('lv_admin_key'),
+  state: null,
+
+  async load() {
+    try {
+      admin.state = await rpc('admin_get_state', { p_key: admin.key });
+      admin.render();
+    } catch (err) {
+      admin.renderLogin(admin.key ? err.message : '');
+    }
+  },
+
+  renderLogin(error) {
+    app.innerHTML = `
+      <main style="max-width:420px">
+        <form class="panel stack" id="login">
+          <h2>Admin</h2>
+          <label class="field">Admin key <input type="password" name="key" autocomplete="current-password" required></label>
+          ${error ? `<p class="muted" style="color:#c0392b">${esc(error)}</p>` : ''}
+          <button class="btn accent block">Sign in</button>
+        </form>
+      </main>`;
+    document.getElementById('login').addEventListener('submit', e => {
+      e.preventDefault();
+      admin.key = e.target.key.value;
+      store.set('lv_admin_key', admin.key);
+      admin.load();
+    });
+  },
+
+  render() {
+    const s = admin.state;
+    document.title = 'Admin · ' + s.title;
+    const votedCount = s.guests.filter(g => g.voted).length;
+    const ranked = [...s.houses].sort((a, b) => b.votes - a.votes);
+
+    app.innerHTML = `
+      <div class="admin-bar">
+        <div class="row spread">
+          <strong>Admin</strong>
+          <span class="row"><a href="${location.pathname}">Open guest view ↗</a><button class="btn small ghost" id="logout" style="color:inherit">Log out</button></span>
+        </div>
+      </div>
+      <main class="stack">
+        <section class="panel">
+          <h2>Results</h2>
+          <p class="muted" style="margin-top:0">${votedCount} of ${s.guest_count} guests have voted. Individual votes are never shown.</p>
+          <div style="overflow-x:auto">
+            <table class="results">
+              <thead><tr><th>House</th><th class="num">Votes</th><th class="num">Total</th><th class="num">You pay</th><th class="num">Per guest</th></tr></thead>
+              <tbody>${ranked.map(h => {
+                const host = hostShare(h.total_price, h.host_mode, h.host_value);
+                return `<tr><td>${esc(h.name)}</td><td class="num">${h.votes}</td><td class="num">${money(h.total_price)}</td>
+                  <td class="num">${money(host)}</td><td class="num">${s.guest_count ? money((h.total_price - host) / s.guest_count) : '–'}</td></tr>`;
+              }).join('') || `<tr><td colspan="5" class="muted">No houses yet</td></tr>`}</tbody>
+            </table>
+          </div>
+        </section>
+
+        <form class="panel" id="settings">
+          <h2>Event</h2>
+          <div class="form-grid">
+            <label class="field">Title <input name="title" value="${esc(s.title)}"></label>
+            <label class="field">Price note <input name="price_note" value="${esc(s.price_note)}" placeholder="per person, both nights"></label>
+            <label class="field wide">Subtitle <textarea name="subtitle" rows="2">${esc(s.subtitle)}</textarea></label>
+          </div>
+          <div class="row spread" style="margin-top:12px">
+            <label class="row" style="gap:8px;font-weight:600"><input type="checkbox" name="voting_open" style="width:auto" ${s.voting_open ? 'checked' : ''}> Voting open</label>
+            <button class="btn accent">Save event</button>
+          </div>
+        </form>
+
+        <section class="panel">
+          <h2>Guests (${s.guest_count})</h2>
+          <p class="muted" style="margin-top:0">The guests' part of each house is split between everyone on this list. Don't add yourself.</p>
+          <div class="chips" style="margin-bottom:12px">
+            ${s.guests.map(g => `<span class="chip ${g.voted ? 'done' : ''}">${esc(g.name)} <button data-del-guest="${g.id}" title="Remove ${esc(g.name)}">×</button></span>`).join('') || '<span class="muted">No guests yet</span>'}
+          </div>
+          <form id="add-guests" class="row">
+            <input name="names" placeholder="Names, separated by commas" style="flex:1 1 240px">
+            <button class="btn">Add</button>
+          </form>
+        </section>
+
+        <section class="panel">
+          <div class="row spread" style="margin-bottom:12px">
+            <h2 style="margin:0">Houses</h2>
+            <button class="btn accent small" id="add-house">+ Add house</button>
+          </div>
+          <div id="houses">${s.houses.map(admin.houseForm).join('') || '<p class="muted" id="no-houses">No houses yet.</p>'}</div>
+        </section>
+
+        <form class="panel" id="change-key">
+          <h2>Change admin key</h2>
+          <div class="row">
+            <input type="password" name="new_key" placeholder="New key (min 6 characters)" autocomplete="new-password" style="flex:1 1 240px" required minlength="6">
+            <button class="btn ghost">Change</button>
+          </div>
+        </form>
+      </main>`;
+
+    admin.bind();
+  },
+
+  houseForm(h = {}) {
+    const mode = h.host_mode || 'pct';
+    return `
+      <form class="house-form" data-id="${h.id || ''}">
+        <div class="form-grid">
+          <label class="field">Name <input name="name" value="${esc(h.name)}" required></label>
+          <label class="field">Location <input name="location" value="${esc(h.location)}"></label>
+          <label class="field">Sleeps <input name="capacity" type="number" min="0" value="${h.capacity ?? ''}"></label>
+          <label class="field">Total price (€) <input name="total_price" type="number" min="0" step="0.01" value="${h.total_price ?? ''}" required></label>
+          <div class="field">I pay
+            <div class="row" style="gap:6px;flex-wrap:nowrap">
+              <span class="seg">
+                <label><input type="radio" name="host_mode" value="pct" ${mode === 'pct' ? 'checked' : ''}>%</label>
+                <label><input type="radio" name="host_mode" value="abs" ${mode === 'abs' ? 'checked' : ''}>€</label>
+              </span>
+              <input name="host_value" type="number" min="0" step="0.01" value="${h.host_value ?? 0}" style="flex:1;min-width:0">
             </div>
           </div>
+          <label class="field">Listing link (admin only, never shown to guests) <input name="link" type="url" value="${esc(h.link)}"></label>
+          ${h.link && safeUrl(h.link) ? `<a class="muted" href="${esc(h.link)}" target="_blank" rel="noopener noreferrer" style="align-self:end">Open listing ↗</a>` : ''}
+          <label class="field wide">Description <textarea name="description" rows="2">${esc(h.description)}</textarea></label>
+          <label class="field">Highlights (comma separated) <input name="highlights" value="${esc((h.highlights || []).join(', '))}"></label>
+          <label class="field" style="grid-column:span 2">Photo URLs (one per line) <textarea name="images" rows="3">${esc((h.images || []).join('\n'))}</textarea></label>
+          <div class="calc wide" data-calc></div>
+        </div>
+        <div class="row spread" style="margin-top:12px">
+          <span class="muted">${h.id ? `${h.votes} vote${h.votes === 1 ? '' : 's'}` : 'Not saved yet'}</span>
+          <span class="row" style="gap:8px">
+            <button type="button" class="btn danger small" data-delete>Delete</button>
+            <button class="btn accent small">Save house</button>
+          </span>
+        </div>
+      </form>`;
+  },
 
-          <!-- Vote Area -->
-          <div class="p-5 pt-0 space-y-2">
-            <button onclick="castVote('${villa.id}')" 
-              class="w-full py-2.5 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${
-                hasVotedThis 
-                  ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/40' 
-                  : 'bg-indigo-600 hover:bg-indigo-500 text-white'
-              }">
-              ${hasVotedThis ? '✅ Your Vote' : '👍 Vote for this House'}
-            </button>
+  updateCalc(form) {
+    const f = form.elements;
+    const n = admin.state.guest_count;
+    const total = Number(f.total_price.value) || 0;
+    const host = hostShare(total, f.host_mode.value, f.host_value.value);
+    const rest = total - host;
+    form.querySelector('[data-calc]').innerHTML =
+      `Total ${money(total)} · you pay <b>${money(host)}</b> · guests pay ${money(rest)} → ` +
+      (n ? `<b>${money(Math.round(rest / n * 100) / 100)}</b> per person (${n} guests)` : 'add guests to see the price per person');
+  },
 
-            <div class="space-y-1">
-              <div class="flex justify-between text-xs text-slate-400 font-medium">
-                <span>${villa.votes} votes</span>
-                <span>${votePercentage}%</span>
-              </div>
-              <div class="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden">
-                <div class="bg-indigo-500 h-full transition-all duration-500" style="width: ${votePercentage}%"></div>
-              </div>
-            </div>
-          </div>
-        `;
-
-        container.appendChild(card);
-      });
-    }
-
-    function castVote(villaId) {
-      if (state.userVotedId === villaId) return;
-
-      // Decrement old vote if changing vote
-      if (state.userVotedId) {
-        const prev = state.villas.find(v => v.id === state.userVotedId);
-        if (prev && prev.votes > 0) prev.votes--;
+  bindHouse(form) {
+    admin.updateCalc(form);
+    form.addEventListener('input', () => { form.classList.add('dirty'); admin.updateCalc(form); });
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      const f = form.elements;
+      const list = (v, sep) => v.split(sep).map(x => x.trim()).filter(Boolean);
+      try {
+        await rpc('admin_save_house', {
+          p_key: admin.key,
+          p: {
+            id: form.dataset.id,
+            name: f.name.value,
+            location: f.location.value,
+            capacity: f.capacity.value,
+            total_price: f.total_price.value,
+            host_mode: f.host_mode.value,
+            host_value: f.host_value.value,
+            link: f.link.value,
+            description: f.description.value,
+            highlights: list(f.highlights.value, ','),
+            images: list(f.images.value, /\n/),
+          },
+        });
+        toast('House saved');
+        admin.load();
+      } catch (err) { toast(err.message); }
+    });
+    const del = form.querySelector('[data-delete]');
+    del.addEventListener('click', async () => {
+      if (!form.dataset.id) { form.remove(); return; }
+      if (del.dataset.armed !== '1') {
+        del.dataset.armed = '1';
+        del.textContent = 'Click again to delete';
+        setTimeout(() => { del.dataset.armed = ''; del.textContent = 'Delete'; }, 3000);
+        return;
       }
+      try {
+        await rpc('admin_delete_house', { p_key: admin.key, p_id: form.dataset.id });
+        toast('House deleted');
+        admin.load();
+      } catch (err) { toast(err.message); }
+    });
+  },
 
-      // Increment new vote
-      const target = state.villas.find(v => v.id === villaId);
-      if (target) {
-        target.votes++;
-        state.userVotedId = villaId;
-        localStorage.setItem('user_voted_villa_id', villaId);
+  bind() {
+    document.getElementById('logout').addEventListener('click', () => {
+      store.set('lv_admin_key', null);
+      admin.key = null;
+      admin.renderLogin('');
+    });
+
+    document.getElementById('settings').addEventListener('submit', async e => {
+      e.preventDefault();
+      const f = e.target.elements;
+      try {
+        await rpc('admin_save_settings', {
+          p_key: admin.key,
+          p: { title: f.title.value, subtitle: f.subtitle.value, price_note: f.price_note.value, voting_open: f.voting_open.checked },
+        });
+        toast('Event saved');
+        admin.load();
+      } catch (err) { toast(err.message); }
+    });
+
+    document.getElementById('add-guests').addEventListener('submit', async e => {
+      e.preventDefault();
+      const names = e.target.names.value.split(/[,\n]/).map(x => x.trim()).filter(Boolean);
+      if (!names.length) return;
+      try {
+        await rpc('admin_add_guests', { p_key: admin.key, p_names: names });
+        toast(`Added ${names.length} guest${names.length === 1 ? '' : 's'}`);
+        admin.load();
+      } catch (err) { toast(err.message); }
+    });
+
+    app.querySelectorAll('[data-del-guest]').forEach(b => b.addEventListener('click', async () => {
+      if (b.dataset.armed !== '1') {
+        b.dataset.armed = '1';
+        b.textContent = 'remove?';
+        setTimeout(() => { b.dataset.armed = ''; b.textContent = '×'; }, 3000);
+        return;
       }
+      try {
+        await rpc('admin_delete_guest', { p_key: admin.key, p_id: b.dataset.delGuest });
+        toast('Guest removed');
+        admin.load();
+      } catch (err) { toast(err.message); }
+    }));
 
-      renderVillas();
-    }
+    document.getElementById('add-house').addEventListener('click', () => {
+      document.getElementById('no-houses')?.remove();
+      const holder = document.createElement('div');
+      holder.innerHTML = admin.houseForm({});
+      const form = holder.firstElementChild;
+      document.getElementById('houses').prepend(form);
+      admin.bindHouse(form);
+      form.elements.name.focus();
+    });
 
-    // INITIAL RENDER
-    renderVillas();
-  </script>
+    app.querySelectorAll('.house-form').forEach(admin.bindHouse);
+
+    document.getElementById('change-key').addEventListener('submit', async e => {
+      e.preventDefault();
+      const newKey = e.target.new_key.value;
+      try {
+        await rpc('admin_set_key', { p_key: admin.key, p_new_key: newKey });
+        admin.key = newKey;
+        store.set('lv_admin_key', newKey);
+        e.target.reset();
+        toast('Admin key changed');
+      } catch (err) { toast(err.message); }
+    });
+  },
+};
+
+// ================================= Start =================================
+
+if (!configured) {
+  app.innerHTML = `<main><div class="panel"><h2>Almost there</h2>
+    <p>Set <code>SUPABASE_URL</code> and <code>SUPABASE_KEY</code> at the top of the script in <code>index.html</code>. See <code>README.md</code>.</p></div></main>`;
+} else if (isAdmin) {
+  admin.load();
+} else {
+  guest.start();
+}
+</script>
 </body>
 </html>
