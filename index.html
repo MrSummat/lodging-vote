@@ -345,10 +345,7 @@ const guest = {
         </section>
 
         <section class="panel">
-          <div class="row spread" style="margin-bottom:10px">
-            <strong>${votedCount} of ${s.guest_count} have voted</strong>
-            <span class="muted">Price per person = (house total − host contribution) ÷ ${s.guest_count} guests</span>
-          </div>
+          <div style="margin-bottom:10px"><strong>${votedCount} of ${s.guest_count} have voted</strong></div>
           <div class="progress" style="margin-bottom:12px"><div style="width:${s.guest_count ? votedCount / s.guest_count * 100 : 0}%"></div></div>
           <div class="chips">${s.guests.map(g => `<span class="chip ${g.voted ? 'done' : ''}">${g.voted ? '✓ ' : ''}${esc(g.name)}</span>`).join('')}</div>
         </section>
