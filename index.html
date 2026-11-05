@@ -298,6 +298,8 @@ const guest = {
   lastJson: '',
   id: store.get('lv_guest'),
   myVote: null,
+  travel: null,
+  editingTravel: false,
   busy: false,
 
   async load(force = false) {
@@ -308,10 +310,14 @@ const guest = {
         store.set('lv_guest', null);
       }
       guest.myVote = guest.id ? await rpc('my_vote', { p_guest: guest.id, p_token: deviceToken() }) : null;
-      const json = JSON.stringify([state, guest.id, guest.myVote]);
-      if (!force && json === guest.lastJson) return;
+      // Null when the travel migration isn't installed; the section is then hidden.
+      const travel = await rpc('get_travel').catch(() => null);
+      const json = JSON.stringify([state, guest.id, guest.myVote, travel]);
+      // Don't wipe the travel form while someone is filling it in.
+      if (!force && (json === guest.lastJson || guest.editingTravel)) return;
       guest.lastJson = json;
       guest.state = state;
+      guest.travel = travel;
       guest.render();
     } catch (err) {
       if (!guest.state) app.innerHTML = `<main><div class="panel">Couldn't load: ${esc(err.message)}</div></main>`;
@@ -390,14 +396,82 @@ const guest = {
               </div>
             </article>`;
         }).join('')}</section>` : `<div class="panel center muted">No houses yet. Check back soon!</div>`}
+
+        ${guest.travel ? guest.travelHtml(me) : ''}
       </main>`;
 
     document.getElementById('who').addEventListener('change', e => {
       guest.id = e.target.value || null;
       store.set('lv_guest', guest.id);
+      guest.editingTravel = false;
       guest.load(true);
     });
     app.querySelectorAll('[data-vote]').forEach(b => b.addEventListener('click', () => guest.vote(b.dataset.vote)));
+    const tf = document.getElementById('travel-form');
+    if (tf) {
+      tf.addEventListener('input', () => { guest.editingTravel = true; });
+      tf.addEventListener('submit', guest.saveTravel);
+    }
+  },
+
+  travelHtml(me) {
+    const rows = guest.travel;
+    const mine = rows.find(r => r.guest_id === guest.id) || {};
+    const when = v => v ? new Date(v).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '–';
+    const local = v => v ? String(v).slice(0, 16) : '';
+    const drivers = rows.filter(r => r.can_drive).length;
+    const missing = guest.state.guests.filter(g => !rows.some(r => r.guest_id === g.id));
+    return `
+      <section class="panel" id="travel">
+        <h2>✈️ Travel & cars</h2>
+        <p class="muted" style="margin-top:0">We'll rent a few cars at Barcelona airport (cheap, about €10 each split between 4) and drive up together. Add your arrival and departure so we can group people into cars. This part is <strong>not anonymous</strong>: everyone can see it.</p>
+        ${me ? `
+          <form id="travel-form" class="form-grid" style="margin-bottom:16px">
+            <label class="field">Arriving (date & time) <input type="datetime-local" name="arrival_at" value="${local(mine.arrival_at)}"></label>
+            <label class="field">Arriving where <input name="arrival_place" maxlength="200" value="${esc(mine.arrival_place)}" placeholder="BCN T1, flight VY1234 · or already in BCN"></label>
+            <label class="field">Leaving (date & time) <input type="datetime-local" name="departure_at" value="${local(mine.departure_at)}"></label>
+            <label class="field">Leaving from <input name="departure_place" maxlength="200" value="${esc(mine.departure_place)}" placeholder="BCN T2, flight VY1235"></label>
+            <label class="field wide">Notes <input name="notes" maxlength="500" value="${esc(mine.notes)}" placeholder="e.g. travelling with Laura, big suitcase"></label>
+            <label class="row wide" style="gap:8px;font-weight:600"><input type="checkbox" name="can_drive" style="width:auto" ${mine.can_drive ? 'checked' : ''}> 🚗 I can drive one of the rental cars (licence + credit card)</label>
+            <div class="wide"><button class="btn accent">Save my travel plans</button></div>
+          </form>` : `<p class="muted">Pick your name above to add your travel plans.</p>`}
+        <p style="margin:0 0 8px"><strong>🚗 ${drivers} driver${drivers === 1 ? '' : 's'}</strong> · ${rows.length} of ${guest.state.guest_count} have added their plans</p>
+        ${rows.length ? `
+          <div style="overflow-x:auto">
+            <table class="results">
+              <thead><tr><th>Who</th><th>Arrives</th><th>Leaves</th><th>Drives</th><th>Notes</th></tr></thead>
+              <tbody>${rows.map(r => `<tr>
+                <td>${esc(r.name)}</td>
+                <td>${when(r.arrival_at)}<div class="muted">${esc(r.arrival_place)}</div></td>
+                <td>${when(r.departure_at)}<div class="muted">${esc(r.departure_place)}</div></td>
+                <td>${r.can_drive ? '🚗' : ''}</td>
+                <td class="muted">${esc(r.notes)}</td></tr>`).join('')}</tbody>
+            </table>
+          </div>` : ''}
+        ${missing.length ? `<p class="muted" style="margin-bottom:0">Still missing: ${missing.map(g => esc(g.name)).join(', ')}</p>` : ''}
+      </section>`;
+  },
+
+  async saveTravel(e) {
+    e.preventDefault();
+    const f = e.target.elements;
+    try {
+      await rpc('save_travel', {
+        p_guest: guest.id,
+        p: {
+          arrival_at: f.arrival_at.value,
+          arrival_place: f.arrival_place.value,
+          departure_at: f.departure_at.value,
+          departure_place: f.departure_place.value,
+          can_drive: f.can_drive.checked,
+          notes: f.notes.value,
+        },
+      });
+      guest.editingTravel = false;
+      toast('Travel plans saved!');
+      await guest.load(true);
+      document.getElementById('travel')?.scrollIntoView({ block: 'start' });
+    } catch (err) { toast(err.message); }
   },
 
   async vote(houseId) {
