@@ -29,6 +29,9 @@ create table if not exists public.houses (
   highlights  text[] not null default '{}',
   images      text[] not null default '{}',
   total_price numeric(10,2) not null default 0 check (total_price >= 0),
+  -- Optional surcharge per person beyond included_guests (whole stay).
+  included_guests int check (included_guests >= 0),
+  extra_guest_fee numeric(10,2) not null default 0 check (extra_guest_fee >= 0),
   host_mode   text not null default 'pct' check (host_mode in ('pct', 'abs')),
   host_value  numeric(10,2) not null default 0 check (host_value >= 0),
   created_at  timestamptz not null default now()
@@ -58,14 +61,23 @@ revoke all on public.settings, public.houses, public.guests, public.votes from a
 
 -- Helpers --------------------------------------------------------------------
 
+-- House total for everyone staying: the guest list plus the host.
+create or replace function public.effective_total(h public.houses)
+returns numeric language sql stable as $$
+  select h.total_price + case
+    when h.included_guests is null then 0
+    else greatest(0, (select count(*) from public.guests) + 1 - h.included_guests) * h.extra_guest_fee
+  end
+$$;
+
 -- What the host pays for a house: a percentage of the total or a fixed amount,
 -- never more than the total.
 create or replace function public.host_share(h public.houses)
-returns numeric language sql immutable as $$
+returns numeric language sql stable as $$
   select least(
-    h.total_price,
+    public.effective_total(h),
     case when h.host_mode = 'pct'
-      then h.total_price * least(h.host_value, 100) / 100
+      then public.effective_total(h) * least(h.host_value, 100) / 100
       else h.host_value
     end
   )
@@ -108,7 +120,7 @@ set search_path = public as $$
         'capacity',    h.capacity,
         'highlights',  to_jsonb(h.highlights),
         'images',      to_jsonb(h.images),
-        'price_pp',    round((h.total_price - host_share(h)) / nullif((select n from g), 0), 2),
+        'price_pp',    round((effective_total(h) - host_share(h)) / nullif((select n from g), 0), 2),
         'votes',       (select count(*) from votes v where v.house_id = h.id)
       ) order by h.created_at)
       from houses h), '[]'::jsonb)
@@ -182,6 +194,9 @@ begin
         'highlights',  to_jsonb(h.highlights),
         'images',      to_jsonb(h.images),
         'total_price', h.total_price,
+        'included_guests', h.included_guests,
+        'extra_guest_fee', h.extra_guest_fee,
+        'effective_total', effective_total(h),
         'host_mode',   h.host_mode,
         'host_value',  h.host_value,
         'votes',       (select count(*) from votes v where v.house_id = h.id)
@@ -225,6 +240,8 @@ begin
     highlights  = array(select jsonb_array_elements_text(coalesce(p->'highlights', '[]'::jsonb))),
     images      = array(select jsonb_array_elements_text(coalesce(p->'images', '[]'::jsonb))),
     total_price = coalesce(nullif(p->>'total_price', '')::numeric, 0),
+    included_guests = nullif(p->>'included_guests', '')::int,
+    extra_guest_fee = coalesce(nullif(p->>'extra_guest_fee', '')::numeric, 0),
     host_mode   = coalesce(p->>'host_mode', 'pct'),
     host_value  = coalesce(nullif(p->>'host_value', '')::numeric, 0)
   where id = v_id;
@@ -271,6 +288,7 @@ end $$;
 -- Permissions ----------------------------------------------------------------
 
 revoke execute on function public.host_share(public.houses) from public, anon, authenticated;
+revoke execute on function public.effective_total(public.houses) from public, anon, authenticated;
 revoke execute on function public.assert_admin(text) from public, anon, authenticated;
 
 grant execute on function

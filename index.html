@@ -259,6 +259,13 @@ function deviceToken() {
   return t;
 }
 
+// Mirrors public.effective_total() in schema.sql: everyone staying is the guest list plus the host.
+function effectiveTotal(total, included, fee, guestCount) {
+  total = Number(total) || 0;
+  if (included === '' || included == null) return total;
+  return total + Math.max(0, guestCount + 1 - Number(included)) * (Number(fee) || 0);
+}
+
 // Mirrors public.host_share() in schema.sql, for the admin live preview.
 function hostShare(total, mode, value) {
   total = Number(total) || 0;
@@ -474,9 +481,10 @@ const admin = {
             <table class="results">
               <thead><tr><th>House</th><th class="num">Votes</th><th class="num">Total</th><th class="num">You pay</th><th class="num">Per guest</th></tr></thead>
               <tbody>${ranked.map(h => {
-                const host = hostShare(h.total_price, h.host_mode, h.host_value);
-                return `<tr><td>${esc(h.name)}</td><td class="num">${h.votes}</td><td class="num">${money(h.total_price)}</td>
-                  <td class="num">${money(host)}</td><td class="num">${s.guest_count ? money((h.total_price - host) / s.guest_count) : '–'}</td></tr>`;
+                const total = effectiveTotal(h.total_price, h.included_guests, h.extra_guest_fee, s.guest_count);
+                const host = hostShare(total, h.host_mode, h.host_value);
+                return `<tr><td>${esc(h.name)}</td><td class="num">${h.votes}</td><td class="num">${money(total)}</td>
+                  <td class="num">${money(host)}</td><td class="num">${s.guest_count ? money((total - host) / s.guest_count) : '–'}</td></tr>`;
               }).join('') || `<tr><td colspan="5" class="muted">No houses yet</td></tr>`}</tbody>
             </table>
           </div>
@@ -536,6 +544,8 @@ const admin = {
           <label class="field">Location <input name="location" value="${esc(h.location)}"></label>
           <label class="field">Sleeps <input name="capacity" type="number" min="0" value="${h.capacity ?? ''}"></label>
           <label class="field">Total price (€) <input name="total_price" type="number" min="0" step="0.01" value="${h.total_price ?? ''}" required></label>
+          <label class="field">People included in price, you included (blank = no extras) <input name="included_guests" type="number" min="0" value="${h.included_guests ?? ''}"></label>
+          <label class="field">Extra per person beyond that, whole stay (€) <input name="extra_guest_fee" type="number" min="0" step="0.01" value="${Number(h.extra_guest_fee) || ''}"></label>
           <div class="field">I pay
             <div class="row" style="gap:6px;flex-wrap:nowrap">
               <span class="seg">
@@ -565,11 +575,13 @@ const admin = {
   updateCalc(form) {
     const f = form.elements;
     const n = admin.state.guest_count;
-    const total = Number(f.total_price.value) || 0;
+    const base = Number(f.total_price.value) || 0;
+    const total = effectiveTotal(base, f.included_guests.value, f.extra_guest_fee.value, n);
     const host = hostShare(total, f.host_mode.value, f.host_value.value);
     const rest = total - host;
+    const extras = total > base ? ` (${money(base)} + ${money(total - base)} for ${n + 1 - Number(f.included_guests.value)} extra people)` : '';
     form.querySelector('[data-calc]').innerHTML =
-      `Total ${money(total)} · you pay <b>${money(host)}</b> · guests pay ${money(rest)} → ` +
+      `Total ${money(total)}${extras} · you pay <b>${money(host)}</b> · guests pay ${money(rest)} → ` +
       (n ? `<b>${money(Math.round(rest / n * 100) / 100)}</b> per person (${n} guests)` : 'add guests to see the price per person');
   },
 
@@ -589,6 +601,8 @@ const admin = {
             location: f.location.value,
             capacity: f.capacity.value,
             total_price: f.total_price.value,
+            included_guests: f.included_guests.value,
+            extra_guest_fee: f.extra_guest_fee.value,
             host_mode: f.host_mode.value,
             host_value: f.host_value.value,
             link: f.link.value,
