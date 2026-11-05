@@ -198,6 +198,7 @@
   table.results td, table.results th { padding: 8px 6px; border-bottom: 1px solid var(--line); text-align: left; }
   table.results td.num, table.results th.num { text-align: right; font-variant-numeric: tabular-nums; }
   .center { text-align: center; }
+  .req { color: var(--accent); }
 </style>
 </head>
 <body>
@@ -419,6 +420,11 @@ const guest = {
     const mine = rows.find(r => r.guest_id === guest.id) || {};
     const when = v => v ? new Date(v).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '–';
     const local = v => v ? String(v).slice(0, 16) : '';
+    // Stored as "Place · flight/train", split back apart for editing.
+    const PLACES = ['Barcelona airport (BCN)', 'Barcelona Sants (train)', 'Already in Barcelona', 'Other'];
+    const split = v => { const [p, ...rest] = String(v || '').split(' · '); return { place: p, detail: rest.join(' · ') }; };
+    const arr = split(mine.arrival_place), dep = split(mine.departure_place);
+    const placeSelect = (name, cur) => `<select name="${name}">${PLACES.map(p => `<option ${p === (cur || PLACES[0]) ? 'selected' : ''}>${p}</option>`).join('')}</select>`;
     const drivers = rows.filter(r => r.can_drive).length;
     const missing = guest.state.guests.filter(g => !rows.some(r => r.guest_id === g.id));
     return `
@@ -427,11 +433,14 @@ const guest = {
         <p class="muted" style="margin-top:0">We'll rent a few cars at Barcelona airport (cheap, about €10 each split between 4) and drive up together. Add your arrival and departure so we can group people into cars. This part is <strong>not anonymous</strong>: everyone can see it.</p>
         ${me ? `
           <form id="travel-form" class="form-grid" style="margin-bottom:16px">
-            <label class="field">Arriving (date & time) <input type="datetime-local" name="arrival_at" value="${local(mine.arrival_at)}"></label>
-            <label class="field">Arriving where <input name="arrival_place" maxlength="200" value="${esc(mine.arrival_place)}" placeholder="BCN T1, flight VY1234 · or already in BCN"></label>
-            <label class="field">Leaving (date & time) <input type="datetime-local" name="departure_at" value="${local(mine.departure_at)}"></label>
-            <label class="field">Leaving from <input name="departure_place" maxlength="200" value="${esc(mine.departure_place)}" placeholder="BCN T2, flight VY1235"></label>
-            <label class="field wide">Notes <input name="notes" maxlength="500" value="${esc(mine.notes)}" placeholder="e.g. travelling with Laura, big suitcase"></label>
+            <p class="wide muted" style="margin:0">Fields marked <b class="req">*</b> are required. The important bit is <b>when</b> you arrive and leave.</p>
+            <label class="field">Arrival date & time <b class="req">*</b> <input type="datetime-local" name="arrival_at" value="${local(mine.arrival_at)}" required></label>
+            <label class="field">Arriving at ${placeSelect('arrival_place', arr.place)}</label>
+            <label class="field">Flight / train no. (optional) <input name="arrival_detail" maxlength="100" value="${esc(arr.detail)}" placeholder="e.g. VY1234, T1"></label>
+            <label class="field">Departure date & time <b class="req">*</b> <input type="datetime-local" name="departure_at" value="${local(mine.departure_at)}" required></label>
+            <label class="field">Leaving from ${placeSelect('departure_place', dep.place)}</label>
+            <label class="field">Flight / train no. (optional) <input name="departure_detail" maxlength="100" value="${esc(dep.detail)}" placeholder="e.g. VY1235, T1"></label>
+            <label class="field wide">Notes (optional) <input name="notes" maxlength="500" value="${esc(mine.notes)}" placeholder="e.g. travelling with Laura, big suitcase"></label>
             <label class="row wide" style="gap:8px;font-weight:600"><input type="checkbox" name="can_drive" style="width:auto" ${mine.can_drive ? 'checked' : ''}> 🚗 I can drive one of the rental cars (licence + credit card)</label>
             <div class="wide"><button class="btn accent">Save my travel plans</button></div>
           </form>` : `<p class="muted">Pick your name above to add your travel plans.</p>`}
@@ -455,14 +464,15 @@ const guest = {
   async saveTravel(e) {
     e.preventDefault();
     const f = e.target.elements;
+    const place = (p, d) => [p.value, d.value.trim()].filter(Boolean).join(' · ');
     try {
       await rpc('save_travel', {
         p_guest: guest.id,
         p: {
           arrival_at: f.arrival_at.value,
-          arrival_place: f.arrival_place.value,
+          arrival_place: place(f.arrival_place, f.arrival_detail),
           departure_at: f.departure_at.value,
-          departure_place: f.departure_place.value,
+          departure_place: place(f.departure_place, f.departure_detail),
           can_drive: f.can_drive.checked,
           notes: f.notes.value,
         },
