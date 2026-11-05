@@ -294,6 +294,7 @@ create table if not exists public.travel (
   departure_at    timestamp,
   departure_place text not null default '',
   can_drive       boolean not null default false,
+  diet            text not null default '',
   notes           text not null default '',
   updated_at      timestamptz not null default now()
 );
@@ -312,6 +313,7 @@ set search_path = public as $$
     'departure_at',    t.departure_at,
     'departure_place', t.departure_place,
     'can_drive',       t.can_drive,
+    'diet',            t.diet,
     'notes',           t.notes
   ) order by t.arrival_at nulls last, g.name), '[]'::jsonb)
   from travel t join guests g on g.id = t.guest_id
@@ -324,7 +326,7 @@ begin
   if not exists (select 1 from guests where id = p_guest) then
     raise exception 'Unknown guest';
   end if;
-  insert into travel (guest_id, arrival_at, arrival_place, departure_at, departure_place, can_drive, notes)
+  insert into travel (guest_id, arrival_at, arrival_place, departure_at, departure_place, can_drive, diet, notes)
   values (
     p_guest,
     nullif(p->>'arrival_at', '')::timestamp,
@@ -332,6 +334,7 @@ begin
     nullif(p->>'departure_at', '')::timestamp,
     left(coalesce(p->>'departure_place', ''), 200),
     coalesce((p->>'can_drive')::boolean, false),
+    left(coalesce(p->>'diet', ''), 300),
     left(coalesce(p->>'notes', ''), 500)
   )
   on conflict (guest_id) do update set
@@ -340,6 +343,7 @@ begin
     departure_at    = excluded.departure_at,
     departure_place = excluded.departure_place,
     can_drive       = excluded.can_drive,
+    diet            = excluded.diet,
     notes           = excluded.notes,
     updated_at      = now();
 end $$;

@@ -74,7 +74,7 @@
   .spread { justify-content: space-between; }
   .muted { color: var(--muted); font-size: 13px; }
 
-  label.field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 600; color: var(--muted); }
+  .field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 600; color: var(--muted); }
   input, select, textarea {
     font: inherit;
     color: var(--text);
@@ -425,13 +425,19 @@ const guest = {
     const PLACES = ['Barcelona airport (BCN)', 'Barcelona Sants (train)', 'Already in Barcelona', 'Other'];
     const split = v => { const [p, ...rest] = String(v || '').split(' · '); return { place: p, detail: rest.join(' · ') }; };
     const arr = split(mine.arrival_place), dep = split(mine.departure_place);
+    // Stored as "Vegan, Gluten-free · nut allergy": ticked options, then free text.
+    const DIETS = ['Vegetarian', 'Vegan', 'Gluten-free', 'Lactose-free'];
+    const dietOf = v => { const [opts, ...rest] = String(v || '').split(' · '); const ticked = opts.split(', ').filter(o => DIETS.includes(o)); return { ticked, other: ticked.length ? rest.join(' · ') : String(v || '') }; };
+    const myDiet = dietOf(mine.diet);
+    const dietCounts = DIETS.map(d => [d, rows.filter(r => dietOf(r.diet).ticked.includes(d)).length]).filter(([, n]) => n);
+    const allergies = rows.map(r => [r.name, dietOf(r.diet).other]).filter(([, o]) => o);
     const placeSelect = (name, cur) => `<select name="${name}">${PLACES.map(p => `<option ${p === (cur || PLACES[0]) ? 'selected' : ''}>${p}</option>`).join('')}</select>`;
     const drivers = rows.filter(r => r.can_drive).length;
     const missing = guest.state.guests.filter(g => !rows.some(r => r.guest_id === g.id));
     return `
       <section class="panel" id="travel">
-        <h2>✈️ Travel & cars</h2>
-        <p class="muted" style="margin-top:0">We'll rent a few cars at Barcelona airport (cheap, about €10 each split between 4) and drive up together. Add your arrival and departure so we can group people into cars. This part is <strong>not anonymous</strong>: everyone can see it.</p>
+        <h2>✈️ Travel, cars & food</h2>
+        <p class="muted" style="margin-top:0">We'll rent a few cars at Barcelona airport (cheap, about €10 each split between 4) and drive up together. Add your arrival and departure so we can group people into cars, plus anything I should know for the food shopping. This part is <strong>not anonymous</strong>: everyone can see it.</p>
         ${me ? `
           <form id="travel-form" class="form-grid" style="margin-bottom:16px">
             <p class="wide muted" style="margin:0">Fields marked <b class="req">*</b> are required. The important bit is <b>when</b> you arrive and leave.</p>
@@ -445,20 +451,26 @@ const guest = {
               <label class="field"><span>Leaving from</span>${placeSelect('departure_place', dep.place)}</label>
               <label class="field"><span>Flight / train no. (optional)</span><input name="departure_detail" maxlength="100" value="${esc(dep.detail)}" placeholder="e.g. VY1235, T1"></label>
             </div>
+            <div class="field wide"><span>🥗 Food: anything I should know for the shopping? (optional)</span>
+              <div class="row" style="gap:6px 16px">${DIETS.map(d => `<label class="row" style="gap:6px;font-weight:600;color:var(--text)"><input type="checkbox" name="diet_opt" value="${d}" style="width:auto" ${myDiet.ticked.includes(d) ? 'checked' : ''}> ${d}</label>`).join('')}</div>
+              <input name="diet_other" maxlength="200" value="${esc(myDiet.other)}" placeholder="Allergies or anything else, e.g. nuts, shellfish, no pork">
+            </div>
             <label class="field wide">Notes (optional) <input name="notes" maxlength="500" value="${esc(mine.notes)}" placeholder="e.g. travelling with Laura, big suitcase"></label>
             <label class="row wide" style="gap:8px;font-weight:600"><input type="checkbox" name="can_drive" style="width:auto" ${mine.can_drive ? 'checked' : ''}> 🚗 I can drive one of the rental cars (licence + credit card)</label>
             <div class="wide"><button class="btn accent">Save my travel plans</button></div>
           </form>` : `<p class="muted">Pick your name above to add your travel plans.</p>`}
         <p style="margin:0 0 8px"><strong>🚗 ${drivers} driver${drivers === 1 ? '' : 's'}</strong> · ${rows.length} of ${guest.state.guest_count} have added their plans</p>
+        ${dietCounts.length || allergies.length ? `<p style="margin:0 0 8px">🥗 ${[...dietCounts.map(([d, n]) => `${n} ${d.toLowerCase()}`), ...allergies.map(([n, o]) => `${esc(n)}: ${esc(o)}`)].join(' · ')}</p>` : ''}
         ${rows.length ? `
           <div style="overflow-x:auto">
             <table class="results">
-              <thead><tr><th>Who</th><th>Arrives</th><th>Leaves</th><th>Drives</th><th>Notes</th></tr></thead>
+              <thead><tr><th>Who</th><th>Arrives</th><th>Leaves</th><th>Drives</th><th>Food</th><th>Notes</th></tr></thead>
               <tbody>${rows.map(r => `<tr>
                 <td>${esc(r.name)}</td>
                 <td>${when(r.arrival_at)}<div class="muted">${esc(r.arrival_place)}</div></td>
                 <td>${when(r.departure_at)}<div class="muted">${esc(r.departure_place)}</div></td>
                 <td>${r.can_drive ? '🚗' : ''}</td>
+                <td class="muted">${esc(r.diet)}</td>
                 <td class="muted">${esc(r.notes)}</td></tr>`).join('')}</tbody>
             </table>
           </div>` : ''}
@@ -479,6 +491,7 @@ const guest = {
           departure_at: f.departure_at.value,
           departure_place: place(f.departure_place, f.departure_detail),
           can_drive: f.can_drive.checked,
+          diet: [[...e.target.querySelectorAll('[name=diet_opt]:checked')].map(c => c.value).join(', '), f.diet_other.value.trim()].filter(Boolean).join(' · '),
           notes: f.notes.value,
         },
       });
