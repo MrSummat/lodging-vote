@@ -199,6 +199,7 @@
   table.results td.num, table.results th.num { text-align: right; font-variant-numeric: tabular-nums; }
   .center { text-align: center; }
   .req { color: var(--accent); }
+  .trip-row { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); }
 </style>
 </head>
 <body>
@@ -434,12 +435,16 @@ const guest = {
         ${me ? `
           <form id="travel-form" class="form-grid" style="margin-bottom:16px">
             <p class="wide muted" style="margin:0">Fields marked <b class="req">*</b> are required. The important bit is <b>when</b> you arrive and leave.</p>
-            <label class="field">Arrival date & time <b class="req">*</b> <input type="datetime-local" name="arrival_at" value="${local(mine.arrival_at)}" required></label>
-            <label class="field">Arriving at ${placeSelect('arrival_place', arr.place)}</label>
-            <label class="field">Flight / train no. (optional) <input name="arrival_detail" maxlength="100" value="${esc(arr.detail)}" placeholder="e.g. VY1234, T1"></label>
-            <label class="field">Departure date & time <b class="req">*</b> <input type="datetime-local" name="departure_at" value="${local(mine.departure_at)}" required></label>
-            <label class="field">Leaving from ${placeSelect('departure_place', dep.place)}</label>
-            <label class="field">Flight / train no. (optional) <input name="departure_detail" maxlength="100" value="${esc(dep.detail)}" placeholder="e.g. VY1235, T1"></label>
+            <div class="wide trip-row">
+              <label class="field"><span>Arrival date & time <b class="req">*</b></span><input type="datetime-local" name="arrival_at" value="${local(mine.arrival_at)}" required></label>
+              <label class="field"><span>Arriving at</span>${placeSelect('arrival_place', arr.place)}</label>
+              <label class="field"><span>Flight / train no. (optional)</span><input name="arrival_detail" maxlength="100" value="${esc(arr.detail)}" placeholder="e.g. VY1234, T1"></label>
+            </div>
+            <div class="wide trip-row">
+              <label class="field"><span>Departure date & time <b class="req">*</b></span><input type="datetime-local" name="departure_at" value="${local(mine.departure_at)}" required></label>
+              <label class="field"><span>Leaving from</span>${placeSelect('departure_place', dep.place)}</label>
+              <label class="field"><span>Flight / train no. (optional)</span><input name="departure_detail" maxlength="100" value="${esc(dep.detail)}" placeholder="e.g. VY1235, T1"></label>
+            </div>
             <label class="field wide">Notes (optional) <input name="notes" maxlength="500" value="${esc(mine.notes)}" placeholder="e.g. travelling with Laura, big suitcase"></label>
             <label class="row wide" style="gap:8px;font-weight:600"><input type="checkbox" name="can_drive" style="width:auto" ${mine.can_drive ? 'checked' : ''}> 🚗 I can drive one of the rental cars (licence + credit card)</label>
             <div class="wide"><button class="btn accent">Save my travel plans</button></div>
