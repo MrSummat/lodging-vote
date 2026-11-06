@@ -73,6 +73,9 @@
   .note { border-left: 4px solid var(--accent); }
   .note p { margin: 0; line-height: 1.55; }
   .note p + p { margin-top: 1em; }
+  .compact { padding: 12px 16px; }
+  .compact summary { cursor: pointer; font-weight: 600; }
+  .compact details[open] summary { margin-bottom: 4px; }
   /* Lines starting with an emoji become bullet points with a hanging indent. */
   .note .pt { display: block; margin: 4px 0 4px 10px; padding-left: 1.45em; text-indent: -1.45em; }
   .info { padding: 12px 16px; background: var(--surface-2); box-shadow: none; }
@@ -321,6 +324,7 @@ const guest = {
   travel: null,
   editingTravel: false,
   typingFeedback: false,
+  feedbackOpen: false,
   busy: false,
 
   async load(force = false) {
@@ -371,11 +375,13 @@ const guest = {
           ${noteHtml(s.message)}
         </section>` : ''}
 
-        <form class="panel" id="feedback-form">
-          <h2>💬 Anything you'd rather tell me anonymously?</h2>
-          <p class="muted" style="margin-top:0">Optional. Your name isn't saved with it, and only I can read it.</p>
-          <textarea name="body" rows="3" maxlength="2000" placeholder="Worries, budget, ideas, anything…"></textarea>
-          <div class="row" style="justify-content:flex-end;margin-top:10px"><button class="btn accent">Send anonymously</button></div>
+        <form class="panel compact" id="feedback-form">
+          <details ${guest.feedbackOpen ? 'open' : ''}>
+            <summary>💬 Anything you'd rather tell me anonymously?</summary>
+            <p class="muted">Optional. Your name isn't saved with it, and only I can read it.</p>
+            <textarea name="body" rows="3" maxlength="2000" placeholder="Worries, budget, ideas, anything…"></textarea>
+            <div class="row" style="justify-content:flex-end;margin-top:10px"><button class="btn accent">Send anonymously</button></div>
+          </details>
         </form>
 
         <section class="panel">
@@ -443,6 +449,7 @@ const guest = {
     });
     app.querySelectorAll('[data-vote]').forEach(b => b.addEventListener('click', () => guest.vote(b.dataset.vote)));
     const ff = document.getElementById('feedback-form');
+    ff.querySelector('details').addEventListener('toggle', e => { guest.feedbackOpen = e.target.open; });
     ff.addEventListener('input', () => { guest.typingFeedback = ff.body.value.trim() !== ''; });
     ff.addEventListener('submit', guest.sendFeedback);
     const tf = document.getElementById('travel-form');
