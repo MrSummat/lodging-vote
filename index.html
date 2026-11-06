@@ -70,6 +70,8 @@
     box-shadow: var(--shadow);
   }
   .panel h2 { font-size: 20px; margin-bottom: 10px; }
+  .note { border-left: 4px solid var(--accent); }
+  .note p { margin: 0; white-space: pre-line; line-height: 1.55; }
   .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
   .spread { justify-content: space-between; }
   .muted { color: var(--muted); font-size: 13px; }
@@ -347,6 +349,11 @@ const guest = {
         ${s.subtitle ? `<p>${esc(s.subtitle)}</p>` : ''}
       </header>
       <main class="stack">
+        ${s.message ? `<section class="panel note">
+          ${s.message_title ? `<h2>${esc(s.message_title)}</h2>` : ''}
+          <p>${esc(s.message)}</p>
+        </section>` : ''}
+
         <section class="panel">
           <div class="row spread">
             <label class="field" style="flex:1 1 220px">Who are you?
@@ -598,6 +605,8 @@ const admin = {
             <label class="field">Title <input name="title" value="${esc(s.title)}"></label>
             <label class="field">Price note <input name="price_note" value="${esc(s.price_note)}" placeholder="per person, both nights"></label>
             <label class="field wide">Subtitle <textarea name="subtitle" rows="2">${esc(s.subtitle)}</textarea></label>
+            <label class="field wide">Note title <input name="message_title" value="${esc(s.message_title || '')}" placeholder="💌 Before you vote"></label>
+            <label class="field wide">Note to guests (own section under the header, blank = hidden) <textarea name="message" rows="10">${esc(s.message || '')}</textarea></label>
           </div>
           <div class="row spread" style="margin-top:12px">
             <label class="row" style="gap:8px;font-weight:600"><input type="checkbox" name="voting_open" style="width:auto" ${s.voting_open ? 'checked' : ''}> Voting open</label>
@@ -747,7 +756,7 @@ const admin = {
       try {
         await rpc('admin_save_settings', {
           p_key: admin.key,
-          p: { title: f.title.value, subtitle: f.subtitle.value, price_note: f.price_note.value, voting_open: f.voting_open.checked },
+          p: { title: f.title.value, subtitle: f.subtitle.value, message_title: f.message_title.value, message: f.message.value, price_note: f.price_note.value, voting_open: f.voting_open.checked },
         });
         toast('Event saved');
         admin.load();

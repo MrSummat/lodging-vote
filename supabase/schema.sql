@@ -14,6 +14,8 @@ create table if not exists public.settings (
   id             int primary key default 1 check (id = 1),
   title          text not null default 'Pick our house',
   subtitle       text not null default '',
+  message_title  text not null default '',
+  message        text not null default '',
   price_note     text not null default 'per person, whole stay',
   voting_open    boolean not null default true,
   admin_key_hash text not null
@@ -101,6 +103,8 @@ set search_path = public as $$
   select jsonb_build_object(
     'title',       s.title,
     'subtitle',    s.subtitle,
+    'message_title', s.message_title,
+    'message',     s.message,
     'price_note',  s.price_note,
     'voting_open', s.voting_open,
     'guest_count', (select n from g),
@@ -173,6 +177,8 @@ begin
   select jsonb_build_object(
     'title',       s.title,
     'subtitle',    s.subtitle,
+    'message_title', s.message_title,
+    'message',     s.message,
     'price_note',  s.price_note,
     'voting_open', s.voting_open,
     'guest_count', v_n,
@@ -215,6 +221,8 @@ begin
   update settings set
     title       = coalesce(p->>'title', title),
     subtitle    = coalesce(p->>'subtitle', subtitle),
+    message_title = coalesce(p->>'message_title', message_title),
+    message     = coalesce(p->>'message', message),
     price_note  = coalesce(p->>'price_note', price_note),
     voting_open = coalesce((p->>'voting_open')::boolean, voting_open)
   where id = 1;
