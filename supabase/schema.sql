@@ -16,6 +16,7 @@ create table if not exists public.settings (
   subtitle       text not null default '',
   message_title  text not null default '',
   message        text not null default '',
+  houses_note    text not null default '',
   price_note     text not null default 'per person, whole stay',
   voting_open    boolean not null default true,
   admin_key_hash text not null
@@ -105,6 +106,7 @@ set search_path = public as $$
     'subtitle',    s.subtitle,
     'message_title', s.message_title,
     'message',     s.message,
+    'houses_note', s.houses_note,
     'price_note',  s.price_note,
     'voting_open', s.voting_open,
     'guest_count', (select n from g),
@@ -179,6 +181,7 @@ begin
     'subtitle',    s.subtitle,
     'message_title', s.message_title,
     'message',     s.message,
+    'houses_note', s.houses_note,
     'price_note',  s.price_note,
     'voting_open', s.voting_open,
     'guest_count', v_n,
@@ -223,6 +226,7 @@ begin
     subtitle    = coalesce(p->>'subtitle', subtitle),
     message_title = coalesce(p->>'message_title', message_title),
     message     = coalesce(p->>'message', message),
+    houses_note = coalesce(p->>'houses_note', houses_note),
     price_note  = coalesce(p->>'price_note', price_note),
     voting_open = coalesce((p->>'voting_open')::boolean, voting_open)
   where id = 1;

@@ -72,6 +72,8 @@
   .panel h2 { font-size: 20px; margin-bottom: 10px; }
   .note { border-left: 4px solid var(--accent); }
   .note p { margin: 0; white-space: pre-line; line-height: 1.55; }
+  .info { padding: 12px 16px; background: var(--surface-2); box-shadow: none; }
+  .info p { margin: 0; white-space: pre-line; }
   .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
   .spread { justify-content: space-between; }
   .muted { color: var(--muted); font-size: 13px; }
@@ -372,6 +374,8 @@ const guest = {
           <div class="chips">${s.guests.map(g => `<span class="chip ${g.voted ? 'done' : ''}">${g.voted ? '✓ ' : ''}${esc(g.name)}</span>`).join('')}</div>
         </section>
 
+        ${s.houses_note ? `<section class="panel info"><p>${esc(s.houses_note)}</p></section>` : ''}
+
         ${s.houses.length ? `<section class="grid">${s.houses.map(h => {
           const pct = totalVotes ? Math.round(h.votes / totalVotes * 100) : 0;
           const mine = guest.myVote === h.id;
@@ -606,6 +610,7 @@ const admin = {
             <label class="field">Price note <input name="price_note" value="${esc(s.price_note)}" placeholder="per person, both nights"></label>
             <label class="field wide">Subtitle <textarea name="subtitle" rows="2">${esc(s.subtitle)}</textarea></label>
             <label class="field wide">Note title <input name="message_title" value="${esc(s.message_title || '')}" placeholder="💌 Before you vote"></label>
+            <label class="field wide">Info above the houses (blank = hidden) <textarea name="houses_note" rows="2">${esc(s.houses_note || '')}</textarea></label>
             <label class="field wide">Note to guests (own section under the header, blank = hidden) <textarea name="message" rows="10">${esc(s.message || '')}</textarea></label>
           </div>
           <div class="row spread" style="margin-top:12px">
@@ -756,7 +761,7 @@ const admin = {
       try {
         await rpc('admin_save_settings', {
           p_key: admin.key,
-          p: { title: f.title.value, subtitle: f.subtitle.value, message_title: f.message_title.value, message: f.message.value, price_note: f.price_note.value, voting_open: f.voting_open.checked },
+          p: { title: f.title.value, subtitle: f.subtitle.value, message_title: f.message_title.value, message: f.message.value, houses_note: f.houses_note.value, price_note: f.price_note.value, voting_open: f.voting_open.checked },
         });
         toast('Event saved');
         admin.load();
