@@ -306,6 +306,7 @@ const guest = {
   myVote: null,
   travel: null,
   editingTravel: false,
+  typingFeedback: false,
   busy: false,
 
   async load(force = false) {
@@ -320,7 +321,7 @@ const guest = {
       const travel = await rpc('get_travel').catch(() => null);
       const json = JSON.stringify([state, guest.id, guest.myVote, travel]);
       // Don't wipe the travel form while someone is filling it in.
-      if (!force && (json === guest.lastJson || guest.editingTravel)) return;
+      if (!force && (json === guest.lastJson || guest.editingTravel || guest.typingFeedback)) return;
       guest.lastJson = json;
       guest.state = state;
       guest.travel = travel;
@@ -355,6 +356,13 @@ const guest = {
           ${s.message_title ? `<h2>${esc(s.message_title)}</h2>` : ''}
           <p>${esc(s.message)}</p>
         </section>` : ''}
+
+        <form class="panel" id="feedback-form">
+          <h2>💬 Anything you'd rather tell me anonymously?</h2>
+          <p class="muted" style="margin-top:0">Optional. Your name isn't saved with it, and only I can read it.</p>
+          <textarea name="body" rows="3" maxlength="2000" placeholder="Worries, budget, ideas, anything…"></textarea>
+          <div class="row" style="justify-content:flex-end;margin-top:10px"><button class="btn accent">Send anonymously</button></div>
+        </form>
 
         <section class="panel">
           <div class="row spread">
@@ -420,11 +428,28 @@ const guest = {
       guest.load(true);
     });
     app.querySelectorAll('[data-vote]').forEach(b => b.addEventListener('click', () => guest.vote(b.dataset.vote)));
+    const ff = document.getElementById('feedback-form');
+    ff.addEventListener('input', () => { guest.typingFeedback = ff.body.value.trim() !== ''; });
+    ff.addEventListener('submit', guest.sendFeedback);
     const tf = document.getElementById('travel-form');
     if (tf) {
       tf.addEventListener('input', () => { guest.editingTravel = true; });
       tf.addEventListener('submit', guest.saveTravel);
     }
+  },
+
+  async sendFeedback(e) {
+    e.preventDefault();
+    const f = e.target;
+    const btn = f.querySelector('button');
+    btn.disabled = true;
+    try {
+      await rpc('send_feedback', { p_body: f.body.value });
+      f.reset();
+      guest.typingFeedback = false;
+      toast('Sent anonymously. Thank you! 🫶');
+    } catch (err) { toast(err.message); }
+    btn.disabled = false;
   },
 
   travelHtml(me) {
@@ -545,10 +570,13 @@ const guest = {
 const admin = {
   key: store.get('lv_admin_key'),
   state: null,
+  feedback: null,
 
   async load() {
     try {
       admin.state = await rpc('admin_get_state', { p_key: admin.key });
+      // Null when the feedback migration isn't installed; the section is then hidden.
+      admin.feedback = await rpc('admin_get_feedback', { p_key: admin.key }).catch(() => null);
       admin.render();
     } catch (err) {
       admin.renderLogin(admin.key ? err.message : '');
@@ -618,6 +646,16 @@ const admin = {
             <button class="btn accent">Save event</button>
           </div>
         </form>
+
+        ${admin.feedback ? `<section class="panel">
+          <h2>Anonymous messages (${admin.feedback.length})</h2>
+          ${admin.feedback.map(m => `
+            <div class="row spread" style="align-items:flex-start;border-top:1px solid var(--line);padding:10px 0">
+              <div style="flex:1 1 240px;white-space:pre-line">${esc(m.body)}</div>
+              <div class="row" style="gap:8px"><span class="muted">${esc(m.created_on)}</span>
+                <button class="btn danger small" data-del-feedback="${m.id}">Delete</button></div>
+            </div>`).join('') || '<p class="muted">No messages yet.</p>'}
+        </section>` : ''}
 
         <section class="panel">
           <h2>Guests (${s.guest_count})</h2>
@@ -789,6 +827,20 @@ const admin = {
       try {
         await rpc('admin_delete_guest', { p_key: admin.key, p_id: b.dataset.delGuest });
         toast('Guest removed');
+        admin.load();
+      } catch (err) { toast(err.message); }
+    }));
+
+    app.querySelectorAll('[data-del-feedback]').forEach(b => b.addEventListener('click', async () => {
+      if (b.dataset.armed !== '1') {
+        b.dataset.armed = '1';
+        b.textContent = 'Sure?';
+        setTimeout(() => { b.dataset.armed = ''; b.textContent = 'Delete'; }, 3000);
+        return;
+      }
+      try {
+        await rpc('admin_delete_feedback', { p_key: admin.key, p_id: b.dataset.delFeedback });
+        toast('Message deleted');
         admin.load();
       } catch (err) { toast(err.message); }
     }));
