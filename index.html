@@ -57,6 +57,7 @@
     text-align: center;
   }
   .hero h1 { font-size: clamp(28px, 6vw, 44px); }
+  .hero h1 s { text-decoration-thickness: .08em; opacity: .85; }
   .hero p { margin: 10px auto 0; max-width: 560px; opacity: .9; white-space: pre-line; }
 
   main { max-width: 1100px; margin: 0 auto; padding: 24px 16px 64px; }
@@ -303,6 +304,10 @@ document.addEventListener('click', e => {
   g.scrollBy({ left: g.clientWidth * Number(b.dataset.gal), behavior: 'smooth' });
 });
 
+// ~~text~~ in the title is shown crossed out.
+const strikeHtml = t => esc(t).replace(/~~(.+?)~~/g, '<s>$1</s>');
+const strikeText = t => t.replace(/~~(.+?)~~/g, (_, x) => [...x].map(c => c + '\u0336').join(''));
+
 // Paragraphs split on blank lines; lines starting with an emoji become bullets.
 function noteHtml(text) {
   return text.trim().split(/\n\s*\n/).map(para => {
@@ -351,7 +356,7 @@ const guest = {
 
   render() {
     const s = guest.state;
-    document.title = s.title;
+    document.title = strikeText(s.title);
     const me = s.guests.find(g => g.id === guest.id);
     const votedCount = s.guests.filter(g => g.voted).length;
     const totalVotes = s.houses.reduce((a, h) => a + h.votes, 0);
@@ -366,7 +371,7 @@ const guest = {
 
     app.innerHTML = `
       <header class="hero">
-        <h1>${esc(s.title)}</h1>
+        <h1>${strikeHtml(s.title)}</h1>
         ${s.subtitle ? `<p>${esc(s.subtitle)}</p>` : ''}
       </header>
       <main class="stack">
@@ -624,7 +629,7 @@ const admin = {
 
   render() {
     const s = admin.state;
-    document.title = 'Admin · ' + s.title;
+    document.title = 'Admin · ' + strikeText(s.title);
     const votedCount = s.guests.filter(g => g.voted).length;
     const ranked = [...s.houses].sort((a, b) => b.votes - a.votes);
 
