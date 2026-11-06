@@ -71,7 +71,10 @@
   }
   .panel h2 { font-size: 20px; margin-bottom: 10px; }
   .note { border-left: 4px solid var(--accent); }
-  .note p { margin: 0; white-space: pre-line; line-height: 1.55; }
+  .note p { margin: 0; line-height: 1.55; }
+  .note p + p { margin-top: 1em; }
+  /* Lines starting with an emoji become bullet points with a hanging indent. */
+  .note .pt { display: block; margin: 4px 0 4px 10px; padding-left: 1.45em; text-indent: -1.45em; }
   .info { padding: 12px 16px; background: var(--surface-2); box-shadow: none; }
   .info p { margin: 0; white-space: pre-line; }
   .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
@@ -297,6 +300,17 @@ document.addEventListener('click', e => {
   g.scrollBy({ left: g.clientWidth * Number(b.dataset.gal), behavior: 'smooth' });
 });
 
+// Paragraphs split on blank lines; lines starting with an emoji become bullets.
+function noteHtml(text) {
+  return text.trim().split(/\n\s*\n/).map(para => {
+    const lines = para.split('\n').map(l => l.trim()).filter(Boolean);
+    return '<p>' + lines.map((l, i) => /^\p{Extended_Pictographic}/u.test(l)
+      ? `<span class="pt">${esc(l)}</span>`
+      : (i && !/^\p{Extended_Pictographic}/u.test(lines[i - 1]) ? '<br>' : '') + esc(l)
+    ).join('') + '</p>';
+  }).join('');
+}
+
 // =============================== Guest view ===============================
 
 const guest = {
@@ -354,7 +368,7 @@ const guest = {
       <main class="stack">
         ${s.message ? `<section class="panel note">
           ${s.message_title ? `<h2>${esc(s.message_title)}</h2>` : ''}
-          <p>${esc(s.message)}</p>
+          ${noteHtml(s.message)}
         </section>` : ''}
 
         <form class="panel" id="feedback-form">
